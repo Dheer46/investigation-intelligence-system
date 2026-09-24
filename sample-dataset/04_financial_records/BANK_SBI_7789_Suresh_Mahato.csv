@@ -1,0 +1,5 @@
+transaction_id,transaction_date,account_number,account_holder_name,bank,transaction_type,amount_inr,counterparty_account,counterparty_name,remarks
+T-61002,2026-07-16,SBI-XXXX7789,Suresh Mahato,State Bank of India,CREDIT,8000,HDFC-XXXX3345,Ashok Bhatia,transport charges - trip 1
+T-61019,2026-07-17,SBI-XXXX7789,Suresh Mahato,State Bank of India,DEBIT,7500,CASH,CASH WITHDRAWAL,ATM withdrawal Namkum
+T-61035,2026-08-04,SBI-XXXX7789,Suresh Mahato,State Bank of India,CREDIT,8000,HDFC-XXXX3345,Ashok Bhatia,transport charges - trip 2
+T-61041,2026-08-05,SBI-XXXX7789,Suresh Mahato,State Bank of India,DEBIT,8000,CASH,CASH WITHDRAWAL,ATM withdrawal Namkum

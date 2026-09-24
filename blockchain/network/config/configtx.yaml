@@ -1,0 +1,156 @@
+Organizations:
+  - &OrdererOrg
+    Name: OrdererOrg
+    ID: OrdererMSP
+    MSPDir: ../organizations/ordererOrganizations/orderer.iis.local/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('OrdererMSP.admin')"
+    OrdererEndpoints:
+      - orderer1.orderer.iis.local:7050
+
+  - &InvestigationAuthority
+    Name: InvestigationAuthorityMSP
+    ID: InvestigationAuthorityMSP
+    MSPDir: ../organizations/peerOrganizations/investigationauthority.iis.local/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('InvestigationAuthorityMSP.admin', 'InvestigationAuthorityMSP.peer', 'InvestigationAuthorityMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('InvestigationAuthorityMSP.admin', 'InvestigationAuthorityMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('InvestigationAuthorityMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('InvestigationAuthorityMSP.peer')"
+    AnchorPeers:
+      - Host: peer0.investigationauthority.iis.local
+        Port: 7051
+
+  - &Oversight
+    Name: OversightMSP
+    ID: OversightMSP
+    MSPDir: ../organizations/peerOrganizations/oversight.iis.local/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('OversightMSP.admin', 'OversightMSP.peer', 'OversightMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('OversightMSP.admin', 'OversightMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('OversightMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('OversightMSP.peer')"
+    AnchorPeers:
+      - Host: peer0.oversight.iis.local
+        Port: 9051
+
+Capabilities:
+  Channel: &ChannelCapabilities
+    V2_0: true
+  Orderer: &OrdererCapabilities
+    V2_0: true
+  Application: &ApplicationCapabilities
+    V2_5: true
+
+Application: &ApplicationDefaults
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    LifecycleEndorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+    Endorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+  Capabilities:
+    <<: *ApplicationCapabilities
+
+Orderer: &OrdererDefaults
+  OrdererType: etcdraft
+  EtcdRaft:
+    Consenters:
+      - Host: orderer1.orderer.iis.local
+        Port: 7050
+        ClientTLSCert: ../organizations/ordererOrganizations/orderer.iis.local/orderers/orderer1.orderer.iis.local/tls/server.crt
+        ServerTLSCert: ../organizations/ordererOrganizations/orderer.iis.local/orderers/orderer1.orderer.iis.local/tls/server.crt
+  Addresses:
+    - orderer1.orderer.iis.local:7050
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 100
+    AbsoluteMaxBytes: 10 MB
+    PreferredMaxBytes: 2 MB
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+
+Channel: &ChannelDefaults
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+  Capabilities:
+    <<: *ChannelCapabilities
+
+Profiles:
+  AuditOrdererGenesis:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      Organizations:
+        - *OrdererOrg
+      Capabilities:
+        <<: *OrdererCapabilities
+    Consortiums:
+      AuditConsortium:
+        Organizations:
+          - *InvestigationAuthority
+          - *Oversight
+
+  AuditChannel:
+    <<: *ChannelDefaults
+    Consortium: AuditConsortium
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *InvestigationAuthority
+        - *Oversight

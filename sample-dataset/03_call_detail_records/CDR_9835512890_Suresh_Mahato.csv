@@ -1,0 +1,13 @@
+call_id,call_datetime,caller_number,caller_name,callee_number,callee_name,duration_seconds,call_type,cell_tower_location
+C-20014,2026-07-05 20:03:00,9835512890,Suresh Mahato,9431187620,Kamla Devi,241,VOICE,Namkum-Tower-1
+C-20022,2026-07-13 21:02:00,9835512890,Suresh Mahato,9431187620,Kamla Devi,289,VOICE,Namkum-Tower-1
+C-20030,2026-07-14 07:29:00,9835512890,Suresh Mahato,9431187620,Kamla Devi,77,VOICE,Namkum-Tower-1
+C-20033,2026-07-14 09:52:00,9835512890,Suresh Mahato,9871234567,Ashok Bhatia,196,VOICE,Ranchi-Railway-Tower
+C-20041,2026-07-14 21:14:00,9835512890,Suresh Mahato,7004498231,Suresh Mahato (Alt SIM),22,VOICE,Ranchi-Railway-Tower
+C-20049,2026-07-15 08:37:00,9835512890,Suresh Mahato,9871234567,Ashok Bhatia,84,VOICE,Namkum-Tower-1
+C-20077,2026-07-20 16:40:00,9835512890,Suresh Mahato,9431187620,Kamla Devi,54,VOICE,Namkum-Tower-1
+C-20101,2026-08-01 20:11:00,9835512890,Suresh Mahato,9431187620,Kamla Devi,203,VOICE,Namkum-Tower-1
+C-20105,2026-08-02 07:38:00,9835512890,Suresh Mahato,9431187620,Kamla Devi,61,VOICE,Namkum-Tower-1
+C-20108,2026-08-02 10:05:00,9835512890,Suresh Mahato,9871234567,Ashok Bhatia,177,VOICE,Ranchi-Railway-Tower
+C-20115,2026-08-03 09:02:00,9835512890,Suresh Mahato,9871234567,Ashok Bhatia,63,VOICE,Namkum-Tower-1
+C-20140,2026-08-06 14:20:00,9835512890,Suresh Mahato,9431500221,Ramu Mahato,410,VOICE,Namkum-Tower-1

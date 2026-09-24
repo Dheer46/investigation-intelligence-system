@@ -1,0 +1,42 @@
+OPEN SOURCE INTELLIGENCE (OSINT) CAPTURE
+Captured by: AHTU Ranchi (Cyber Cell support)
+Date of capture: 18/07/2026
+Source platform: Facebook
+Page name: "Shine Manpower Services - Delhi/Mumbai Jobs"
+Page created: March 2025 (approx., per Facebook page transparency info)
+Page followers: 1,140
+URL: [redacted - preserved in case file, not reproduced in this extract]
+
+--- CAPTURED POST TEXT (verbatim) ---
+
+"URGENT HIRING !! Hotel & Hospitality Staff needed in Delhi / Mumbai.
+Salary 15,000 to 18,000 per month + FREE STAY + FOOD.
+No experience needed, 10th/12th pass girls and boys welcome.
+Limited seats, joining within 1 week.
+Contact Office: 9871234567
+Ranchi/Jharkhand candidates contact Kamla Aunty: 9431187620
+Travel and ticket will be arranged by company, no advance fee required
+from candidate.
+- Shine Manpower Services, Old Rohtak Road, Delhi"
+
+--- ADDITIONAL COMMENTS ON POST (sampled) ---
+
+Comment by user "Sunita Oraon": "Sir job available for girls only or boys
+also? I am 12th pass"
+Reply by page admin: "Yes both, contact Kamla Aunty for Ranchi candidates
+9431187620"
+(Note: comment timestamp 20/07/2026, i.e. 13 days before Sunita Oraon's
+disappearance on 02/08/2026 - candidate initiated contact through this
+public post, consistent with FIR 2026/JH/00671.)
+
+Comment by user "Meena Kumari": "My cousin went 6 months back, is job
+really genuine? She doesn't pick up call now"
+(No reply from page admin to this comment; comment remained unanswered
+as of capture date.)
+
+--- ANALYST NOTE ---
+Post directly cross-references both known handler numbers (9431187620 -
+Kamla Devi; 9871234567 - Ashok Bhatia) identified separately through CDR
+analysis in AHTU/RNC/2026/139. The unanswered comment from "Meena Kumari"
+suggests further undocumented victims beyond the two confirmed missing
+persons in current case file and warrants follow-up.

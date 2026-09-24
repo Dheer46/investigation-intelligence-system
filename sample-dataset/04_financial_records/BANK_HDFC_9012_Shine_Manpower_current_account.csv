@@ -1,0 +1,5 @@
+transaction_id,transaction_date,account_number,account_holder_name,bank,transaction_type,amount_inr,counterparty_account,counterparty_name,remarks
+T-81003,2026-07-20,HDFC-XXXX9012,Shine Manpower Services (Prop. Ashok Bhatia),HDFC Bank,CREDIT,50000,CASH,CASH DEPOSIT - Delhi Rohtak Road Branch,placement fee received - hospitality client
+T-81004,2026-07-20,HDFC-XXXX9012,Shine Manpower Services (Prop. Ashok Bhatia),HDFC Bank,DEBIT,40000,HDFC-XXXX3345,Ashok Bhatia (personal),office expense reimbursement
+T-81030,2026-08-08,HDFC-XXXX9012,Shine Manpower Services (Prop. Ashok Bhatia),HDFC Bank,CREDIT,50000,CASH,CASH DEPOSIT - Delhi Rohtak Road Branch,placement fee received - hospitality client
+T-81031,2026-08-08,HDFC-XXXX9012,Shine Manpower Services (Prop. Ashok Bhatia),HDFC Bank,DEBIT,40000,HDFC-XXXX3345,Ashok Bhatia (personal),office expense reimbursement

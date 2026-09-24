@@ -1,0 +1,316 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  INVESTIGATOR
+  SUPERVISOR
+  AUDITOR
+  ADMINISTRATOR
+}
+
+enum CaseStatus {
+  OPEN
+  UNDER_INVESTIGATION
+  CLOSED
+  ARCHIVED
+}
+
+enum DocumentSourceType {
+  FIR
+  INTELLIGENCE_REPORT
+  CDR
+  FINANCIAL_TRANSACTION
+  OSINT
+  OTHER
+}
+
+enum DocumentStatus {
+  UPLOADED
+  QUEUED
+  PROCESSING
+  PROCESSED
+  FAILED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum HypothesisStatus {
+  PENDING_REVIEW
+  ACCEPTED
+  REJECTED
+  ESCALATED
+}
+
+enum LedgerEventType {
+  EVIDENCE_REGISTRATION
+  EVIDENCE_HANDOFF
+  INVESTIGATION_EVENT
+  APPROVAL
+  AUDIT_CHECKPOINT
+}
+
+enum UsbTokenStatus {
+  ACTIVE
+  REVOKED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  role         Role
+  badgeNumber  String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // USB + face + PIN authentication layer (see UsbToken/BiometricTemplate).
+  // pinHash is separate from passwordHash - the PIN is the last factor in the
+  // hardware-gated flow, distinct from the plain email/password login path.
+  pinHash            String?
+  failedAuthAttempts Int       @default(0)
+  lockedUntil        DateTime?
+
+  casesCreated       Case[]                      @relation("CaseCreatedBy")
+  documentsUploaded  Document[]                  @relation("DocumentUploadedBy")
+  auditLogs          AuditLog[]
+  resolutionReviews  EntityResolutionCandidate[] @relation("ResolutionReviewedBy")
+  hypothesisActions  HypothesisAction[]
+  usbTokens          UsbToken[]
+  biometricTemplate  BiometricTemplate?
+
+  @@map("users")
+}
+
+// One physical USB (identified by the tokenId written into its gov_token.json)
+// mapped to exactly one officer. A user can accumulate multiple rows over time
+// (lost/reissued token) but only one should be ACTIVE at a time - enforced in
+// the service layer, not the schema, so history is preserved for audit.
+model UsbToken {
+  id         String         @id @default(uuid())
+  tokenId    String         @unique
+  userId     String
+  user       User           @relation(fields: [userId], references: [id])
+  status     UsbTokenStatus @default(ACTIVE)
+  issuedAt   DateTime       @default(now())
+  revokedAt  DateTime?
+
+  @@map("usb_tokens")
+}
+
+// Stores only the encrypted face embedding (numerical vector), never raw
+// photos - enrollment images are discarded immediately after the embedding
+// is generated. One active template per user; re-enrollment overwrites it.
+model BiometricTemplate {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id])
+  embeddingEncrypted String
+  enrolledAt        DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("biometric_templates")
+}
+
+model Case {
+  id          String     @id @default(uuid())
+  caseNumber  String     @unique
+  title       String
+  description String?
+  status      CaseStatus @default(OPEN)
+  createdById String
+  createdBy   User       @relation("CaseCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  documents            Document[]
+  hypotheses           Hypothesis[]
+  ledgerAnchors        LedgerAnchor[]
+  auditLogs            AuditLog[]
+  resolutionCandidates EntityResolutionCandidate[]
+
+  @@map("cases")
+}
+
+model Document {
+  id             String             @id @default(uuid())
+  caseId         String
+  case           Case               @relation(fields: [caseId], references: [id])
+  sourceType     DocumentSourceType
+  originalName   String
+  storageBucket  String
+  storageKey     String
+  mimeType       String
+  sizeBytes      Int
+  sha256Hash     String
+  status         DocumentStatus     @default(UPLOADED)
+  uploadedById   String
+  uploadedBy     User               @relation("DocumentUploadedBy", fields: [uploadedById], references: [id])
+  uploadedAt     DateTime           @default(now())
+  processedAt    DateTime?
+  metadata       Json?
+
+  extractedEntities     ExtractedEntity[]
+  extractedRelations    ExtractedRelation[]
+  ledgerAnchors         LedgerAnchor[]
+
+  @@map("documents")
+}
+
+// Raw NLP output prior to entity resolution / graph merge - kept for provenance.
+model ExtractedEntity {
+  id          String   @id @default(uuid())
+  documentId  String
+  document    Document @relation(fields: [documentId], references: [id])
+  entityType  String
+  rawText     String
+  normalized  String?
+  locationRef String? // page/row/timestamp/event id within the source document
+  confidence  Float
+  createdAt   DateTime @default(now())
+
+  resolvedEntityId String?
+  resolvedEntity   ResolvedEntity? @relation("ResolvedMembers", fields: [resolvedEntityId], references: [id])
+
+  @@map("extracted_entities")
+}
+
+// Canonical, merged identity produced by the entity resolution pipeline
+// (exact + fuzzy + Splink record linkage + context scoring). Multiple
+// ExtractedEntity mentions - possibly from different documents - point here
+// once resolved above the auto-merge confidence threshold.
+model ResolvedEntity {
+  id            String   @id @default(uuid())
+  entityType    String
+  canonicalName String
+  attributes    Json? // merged supporting attributes observed across members (phones/locations/accounts)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  members ExtractedEntity[] @relation("ResolvedMembers")
+
+  @@map("resolved_entities")
+}
+
+// A proposed merge cluster awaiting (or having received) human review -
+// medium-confidence output of the resolution pipeline. `memberEntityIds`
+// lists the ExtractedEntity rows the pipeline believes are the same
+// real-world entity; approving creates/extends a ResolvedEntity.
+model EntityResolutionCandidate {
+  id              String       @id @default(uuid())
+  caseId          String
+  case            Case         @relation(fields: [caseId], references: [id])
+  entityType      String
+  canonicalName   String
+  memberEntityIds String[]
+  matchScore      Float
+  decision        ReviewStatus @default(PENDING)
+  reviewedById    String?
+  reviewedBy      User?        @relation("ResolutionReviewedBy", fields: [reviewedById], references: [id])
+  reviewedAt      DateTime?
+  createdAt       DateTime     @default(now())
+
+  @@map("entity_resolution_candidates")
+}
+
+model ExtractedRelation {
+  id           String   @id @default(uuid())
+  documentId   String
+  document     Document @relation(fields: [documentId], references: [id])
+  sourceText   String
+  subjectText  String
+  predicate    String
+  objectText   String
+  locationRef  String? // page/row/timestamp/event id - mandatory provenance anchor
+  confidence   Float
+  createdAt    DateTime @default(now())
+
+  @@map("extracted_relations")
+}
+
+model Hypothesis {
+  id              String            @id @default(uuid())
+  caseId          String
+  case            Case              @relation(fields: [caseId], references: [id])
+  hypothesisText  String
+  evidenceSummary Json // list of evidence source references
+  confidence      Float
+  status          HypothesisStatus  @default(PENDING_REVIEW)
+  provenance      Json // graph path, source doc ids, timestamps
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  actions       HypothesisAction[]
+  ledgerAnchors LedgerAnchor[]
+
+  @@map("hypotheses")
+}
+
+model HypothesisAction {
+  id           String            @id @default(uuid())
+  hypothesisId String
+  hypothesis   Hypothesis        @relation(fields: [hypothesisId], references: [id])
+  action       HypothesisStatus
+  actorId      String
+  actor        User              @relation(fields: [actorId], references: [id])
+  notes        String?
+  createdAt    DateTime          @default(now())
+
+  @@map("hypothesis_actions")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id])
+  action     String
+  targetType String
+  targetId   String
+  caseId     String?
+  case       Case?    @relation(fields: [caseId], references: [id])
+  result     String
+  provenance Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  ledgerAnchor LedgerAnchor?
+
+  @@map("audit_logs")
+}
+
+// Minimal integrity-anchor record mirroring what was submitted to the permissioned ledger.
+// The ledger itself is the source of truth for tamper-evidence; this row lets the app
+// join a ledger transaction back to the case/document/hypothesis/audit-log it anchors.
+model LedgerAnchor {
+  id              String          @id @default(uuid())
+  eventType       LedgerEventType
+  artifactHash    String
+  ledgerTxId      String          @unique
+  channelName     String
+  actorId         String
+  caseId          String?
+  case            Case?           @relation(fields: [caseId], references: [id])
+  documentId      String?
+  document        Document?       @relation(fields: [documentId], references: [id])
+  hypothesisId    String?
+  hypothesis      Hypothesis?     @relation(fields: [hypothesisId], references: [id])
+  auditLogId      String?         @unique
+  auditLog        AuditLog?       @relation(fields: [auditLogId], references: [id])
+  submittedAt     DateTime        @default(now())
+  verified        Boolean         @default(false)
+  verifiedAt      DateTime?
+
+  @@map("ledger_anchors")
+}

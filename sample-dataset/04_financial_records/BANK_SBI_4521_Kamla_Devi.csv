@@ -1,0 +1,6 @@
+transaction_id,transaction_date,account_number,account_holder_name,bank,transaction_type,amount_inr,counterparty_account,counterparty_name,remarks
+T-51001,2026-06-30,SBI-XXXX4521,Kamla Devi,State Bank of India,CREDIT,2000,HDFC-XXXX3345,Ashok Bhatia,advance for candidate documents
+T-51014,2026-07-16,SBI-XXXX4521,Kamla Devi,State Bank of India,CREDIT,5000,HDFC-XXXX3345,Ashok Bhatia,commission - Priya candidate placed
+T-51022,2026-07-18,SBI-XXXX4521,Kamla Devi,State Bank of India,DEBIT,4500,CASH,CASH WITHDRAWAL,ATM withdrawal Ranchi
+T-51040,2026-08-04,SBI-XXXX4521,Kamla Devi,State Bank of India,CREDIT,5000,HDFC-XXXX3345,Ashok Bhatia,commission - Sunita candidate placed
+T-51048,2026-08-05,SBI-XXXX4521,Kamla Devi,State Bank of India,DEBIT,5000,CASH,CASH WITHDRAWAL,ATM withdrawal Ranchi

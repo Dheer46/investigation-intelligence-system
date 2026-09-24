@@ -1,0 +1,62 @@
+RESTRICTED - FOR OFFICIAL USE ONLY
+ANTI-HUMAN TRAFFICKING UNIT (AHTU), RANCHI
+JHARKHAND POLICE
+
+INTELLIGENCE REPORT
+Report No.: AHTU/RNC/2026/118                             Date: 18/07/2026
+Subject: Suspected recruitment pattern linked to "Shine Manpower Services" -
+         two missing-women cases from Tupudana/Ormanjhi belt
+
+1. Background:
+   Following registration of FIR No. 2026/JH/00614 (P.S. Ranchi Sadar, dated
+   16/07/2026) regarding missing person Priya Verma (22), this unit conducted a
+   preliminary field inquiry in Tupudana and adjoining villages on 17-18/07/2026.
+
+2. Findings:
+   a) Local inquiry confirms that a woman identified as Kamla Devi (w/o Ramu
+      Mahato), resident of Tupudana, has for the past 10-12 months been
+      approaching young women in the area with job offers in Delhi/Mumbai on
+      behalf of an agency named "Shine Manpower Services". She is locally
+      referred to as "Kamla Aunty".
+
+   b) Informant statement (identity withheld) states at least two other girls
+      from Tupudana left the village in similar circumstances in the last year
+      (approx. October 2025 and February 2026) after contact with Kamla Devi,
+      and have not visited home since; families were reportedly told the girls
+      were "doing well" in Delhi hotel jobs but calls to them go unanswered.
+
+   c) Kamla Devi's residence in Tupudana has been found locked since
+      approximately 15/07/2026, and her mobile number (9431187620) has been
+      largely unreachable since that date, consistent with her having
+      travelled out of Ranchi shortly after Priya Verma's disappearance.
+
+   d) A Facebook page in the name "Shine Manpower Services - Delhi/Mumbai Jobs"
+      was located during open-source checks, advertising hospitality and
+      housekeeping jobs with the same salary range (Rs. 15,000-18,000/month)
+      cited by the complainant in FIR 2026/JH/00614. The page lists a contact
+      number 9871234567 with a Delhi STD-format display and additionally lists
+      "Kamla Aunty (Ranchi contact) 9431187620" for candidates from the Ranchi
+      region. Full capture attached separately as OSINT record.
+
+3. Assessment:
+   The recruitment pattern (local trusted contact approaching economically
+   vulnerable young women with unverifiable placement agency jobs, followed by
+   loss of contact) is consistent with known human trafficking recruitment
+   methodology. This unit assesses MEDIUM-HIGH likelihood that Kamla Devi is
+   functioning as a village-level recruiter for a larger network extending
+   beyond Ranchi district, with the Delhi number 9871234567 warranting
+   subscriber verification and CDR analysis.
+
+4. Recommendations:
+   a) Request CDR (call detail records) for 9431187620 (Kamla Devi) and
+      9871234567 (unidentified Delhi contact) for the period 01/06/2026 to date.
+   b) Request subscriber/KYC details for both numbers from respective service
+      providers.
+   c) Flag Kamla Devi and associated numbers for lookout at Ranchi Railway
+      Station and Birsa Munda Airport.
+   d) Cross-check "Shine Manpower Services" against MCA/state labour
+      department placement agency registration records - preliminary check
+      shows no valid registration found under this exact name in Jharkhand.
+
+Reported by: Inspector Vikas Toppo, AHTU Ranchi
+Reviewed by: DSP (Crime), Ranchi

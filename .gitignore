@@ -1,0 +1,57 @@
+# Env
+.env
+
+# Node
+node_modules/
+dist/
+backend/dist/
+frontend/dist/
+npm-debug.log*
+.vite/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Pretrained model weights (InsightFace buffalo_l detector/recognizer,
+# MiniFASNetV2 liveness) - large binaries fetched at setup time, not source.
+# w600k_r50.onnx alone is 167MB, over GitHub's 100MB hard limit.
+biometric-service/models/
+
+# Prisma
+backend/prisma/migrations/dev.db
+
+# Docker/volumes
+*.log
+
+# Airflow runtime output - local run logs and generated batch outputs, not source
+airflow/logs/
+airflow/data/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Chrome kiosk profile - actual browser state (cache, extensions, possibly
+# session data), not project config. Never belongs in git, especially not a
+# public repo.
+kiosk-watcher/chrome-kiosk-profile/
+
+# Blockchain (Phase 8) - never commit crypto material or generated artifacts;
+# regenerate via blockchain/network/scripts/generate.sh
+blockchain/network/organizations/
+blockchain/network/channel-artifacts/
+blockchain/**/*.pem
+blockchain/**/*.key
+blockchain/**/*_sk
+blockchain/chaincode/**/dist/
+blockchain/chaincode/**/node_modules/
+# Reference clone used to inspect fabric-samples' test-network scripts - not
+# part of this project's own source (see blockchain/README.md for the real setup)
+blockchain/fabric-samples/

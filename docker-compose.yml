@@ -1,0 +1,352 @@
+name: iis
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-iis_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-iis_password}
+      POSTGRES_DB: ${POSTGRES_DB:-iis_db}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-iis_user} -d ${POSTGRES_DB:-iis_db}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  neo4j:
+    image: neo4j:5.24-community
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-neo4jpassword}
+      NEO4J_PLUGINS: '["apoc","graph-data-science"]'
+      NEO4J_dbms_security_procedures_unrestricted: 'apoc.*,gds.*'
+      NEO4J_server_memory_heap_initial__size: '512m'
+      NEO4J_server_memory_heap_max__size: '1G'
+      NEO4J_server_memory_pagecache_size: '512m'
+    ports:
+      - '7474:7474'
+      - '7687:7687'
+    volumes:
+      - neo4j_data:/data
+      - neo4j_plugins:/plugins
+    healthcheck:
+      # Checks bolt (what the apps actually use) via cypher-shell rather than
+      # the HTTP browser endpoint, which can lag behind under heavy GDS CPU
+      # load and produce false "unhealthy" flips even though queries are fine.
+      test:
+        [
+          'CMD-SHELL',
+          'cypher-shell -u neo4j -p ${NEO4J_PASSWORD:-neo4jpassword} "RETURN 1" || exit 1',
+        ]
+      interval: 15s
+      timeout: 15s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  kafka:
+    image: apache/kafka:3.8.0
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    ports:
+      - '9092:9092'
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ['CMD-SHELL', '/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1']
+      interval: 10s
+      timeout: 10s
+      retries: 15
+
+  # Face-recognition ML inference only - no auth logic, no database access,
+  # not published to the host or reachable from the frontend. The backend is
+  # the only caller (see AuthService.enrollBiometric/verifyGateAuth), same
+  # proxy-through-backend rule already enforced for ai-service. This is what
+  # makes the USB/PIN/face gate work from ANY workstation instead of only the
+  # one PC that used to run server.py locally: any kiosk's browser posts to
+  # the backend at its usual address, and the backend reaches this over the
+  # compose network regardless of which physical PC is asking.
+  biometric-service:
+    build:
+      context: ./biometric-service
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'python', '-c', 'import urllib.request; urllib.request.urlopen("http://localhost:8500/health")']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-iis_user}:${POSTGRES_PASSWORD:-iis_password}@postgres:5432/${POSTGRES_DB:-iis_db}
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-neo4jpassword}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_EVIDENCE_BUCKET: evidence
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:-dev-internal-key-change-me}
+      AI_SERVICE_URL: http://ai-service:8000
+      BIOMETRIC_SERVICE_URL: http://biometric-service:8500
+      BIOMETRIC_ENCRYPTION_KEY: ${BIOMETRIC_ENCRYPTION_KEY:-dev-only-change-me-32-bytes-min!}
+      LEDGER_ENABLED: ${LEDGER_ENABLED:-true}
+      LEDGER_MSP_ID: InvestigationAuthorityMSP
+      LEDGER_PEER_ENDPOINT: peer0.investigationauthority.iis.local:7051
+      LEDGER_CHANNEL_NAME: auditchannel
+      LEDGER_CHAINCODE_NAME: auditledger
+      LEDGER_IDENTITY_DIR: /ledger-identity
+      PORT: 3000
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+      - ./blockchain/network/organizations/peerOrganizations/investigationauthority.iis.local:/ledger-identity:ro
+    networks:
+      - default
+      - ledger
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      biometric-service:
+        condition: service_healthy
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DSN: postgresql://${POSTGRES_USER:-iis_user}:${POSTGRES_PASSWORD:-iis_password}@postgres:5432/${POSTGRES_DB:-iis_db}
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-neo4jpassword}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_EVIDENCE_BUCKET: evidence
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      BACKEND_INTERNAL_URL: http://backend:3000
+      INTERNAL_SERVICE_KEY: ${INTERNAL_SERVICE_KEY:-dev-internal-key-change-me}
+      ENABLE_TRANSFORMER_NER: ${ENABLE_TRANSFORMER_NER:-true}
+      ENABLE_MULTILINGUAL_NLP: ${ENABLE_MULTILINGUAL_NLP:-true}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.6-flash}
+    ports:
+      - '8000:8000'
+    volumes:
+      - ./ai-service:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    environment:
+      VITE_BACKEND_URL: http://backend:3000
+      VITE_GATE_HANDOFF_URL: ${GATE_HANDOFF_URL:-http://localhost:3001/sso-callback}
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - backend
+
+  # Completely separate app from the investigator dashboard - its own login,
+  # its own visual identity, its own port. Purely for officer provisioning
+  # (accounts, face+PIN enrollment, USB pairing) by administrators; everyone
+  # else authenticates through the USB gate instead, never through here.
+  admin-portal:
+    build:
+      context: ./admin-portal
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    environment:
+      VITE_BACKEND_URL: http://backend:3000
+    ports:
+      - '5174:5174'
+    volumes:
+      - ./admin-portal:/app
+      - admin_portal_node_modules:/app/node_modules
+    depends_on:
+      - backend
+
+  # --- Phase 9: scheduled/historical batch ingestion (Airflow) ---
+  # Its own Postgres instance (Airflow's metadata schema shouldn't share a
+  # database with the application's), LocalExecutor keeps this to two
+  # containers instead of Celery's worker+broker+flower.
+  airflow-postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U airflow -d airflow']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  airflow-init:
+    image: apache/airflow:2.9.3-python3.11
+    depends_on:
+      airflow-postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create --username admin --password ${AIRFLOW_ADMIN_PASSWORD:-admin} \
+          --firstname Admin --lastname User --role Admin --email admin@iis.local || true
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+
+  airflow-webserver:
+    image: apache/airflow:2.9.3-python3.11
+    restart: unless-stopped
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_ADMIN_PASSWORD:-admin}
+      IIS_BACKEND_URL: http://backend:3000
+    command: webserver
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/data:/opt/airflow/data
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:8080/health || exit 1']
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  airflow-scheduler:
+    image: apache/airflow:2.9.3-python3.11
+    restart: unless-stopped
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      IIS_BACKEND_URL: http://backend:3000
+    command: scheduler
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/data:/opt/airflow/data
+
+volumes:
+  postgres_data:
+  neo4j_data:
+  neo4j_plugins:
+  minio_data:
+  kafka_data:
+  backend_node_modules:
+  frontend_node_modules:
+  admin_portal_node_modules:
+  airflow_postgres_data:
+
+networks:
+  default:
+    name: iis_default
+  # The permissioned ledger network is brought up separately (see
+  # blockchain/network/docker-compose.yml) - it's independently-managed
+  # infrastructure the app connects to, not part of this compose project.
+  ledger:
+    external: true
+    name: iis-ledger-net

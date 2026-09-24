@@ -1,0 +1,25 @@
+# Two participating organizations (investigating authority + independent
+# oversight body) plus an ordering org - genuine multi-party permissioning,
+# not a single trusted party writing its own audit trail.
+OrdererOrgs:
+  - Name: Orderer
+    Domain: orderer.iis.local
+    Specs:
+      - Hostname: orderer1
+
+PeerOrgs:
+  - Name: InvestigationAuthority
+    Domain: investigationauthority.iis.local
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+    Users:
+      Count: 1
+
+  - Name: Oversight
+    Domain: oversight.iis.local
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+    Users:
+      Count: 1

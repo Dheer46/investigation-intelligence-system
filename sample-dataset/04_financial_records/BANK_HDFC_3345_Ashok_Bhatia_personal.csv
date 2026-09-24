@@ -1,0 +1,8 @@
+transaction_id,transaction_date,account_number,account_holder_name,bank,transaction_type,amount_inr,counterparty_account,counterparty_name,remarks
+T-71005,2026-06-30,HDFC-XXXX3345,Ashok Bhatia,HDFC Bank,DEBIT,2000,SBI-XXXX4521,Kamla Devi,advance for candidate documents
+T-71018,2026-07-16,HDFC-XXXX3345,Ashok Bhatia,HDFC Bank,DEBIT,5000,SBI-XXXX4521,Kamla Devi,commission - Priya candidate placed
+T-71019,2026-07-16,HDFC-XXXX3345,Ashok Bhatia,HDFC Bank,DEBIT,8000,SBI-XXXX7789,Suresh Mahato,transport charges - trip 1
+T-71021,2026-07-20,HDFC-XXXX3345,Ashok Bhatia,HDFC Bank,CREDIT,40000,HDFC-XXXX9012,Shine Manpower Services (current a/c),office expense reimbursement
+T-71052,2026-08-04,HDFC-XXXX3345,Ashok Bhatia,HDFC Bank,DEBIT,5000,SBI-XXXX4521,Kamla Devi,commission - Sunita candidate placed
+T-71053,2026-08-04,HDFC-XXXX3345,Ashok Bhatia,HDFC Bank,DEBIT,8000,SBI-XXXX7789,Suresh Mahato,transport charges - trip 2
+T-71061,2026-08-08,HDFC-XXXX3345,Ashok Bhatia,HDFC Bank,CREDIT,40000,HDFC-XXXX9012,Shine Manpower Services (current a/c),office expense reimbursement

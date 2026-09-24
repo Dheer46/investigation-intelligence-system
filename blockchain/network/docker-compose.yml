@@ -1,0 +1,141 @@
+name: iis-ledger
+
+networks:
+  ledger:
+    name: iis-ledger-net
+
+services:
+  orderer1.orderer.iis.local:
+    image: hyperledger/fabric-orderer:2.5
+    container_name: orderer1.orderer.iis.local
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_LISTENPORT=7050
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
+      - ORDERER_GENERAL_TLS_ENABLED=true
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_GENERAL_BOOTSTRAPMETHOD=file
+      - ORDERER_GENERAL_BOOTSTRAPFILE=/var/hyperledger/orderer/genesis.block
+      - ORDERER_CHANNELPARTICIPATION_ENABLED=false
+      - ORDERER_ADMIN_TLS_ENABLED=true
+      - ORDERER_ADMIN_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_ADMIN_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_ADMIN_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_ADMIN_TLS_CLIENTROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_ADMIN_LISTENADDRESS=0.0.0.0:7053
+      - ORDERER_OPERATIONS_LISTENADDRESS=0.0.0.0:9443
+    working_dir: /root
+    command: orderer
+    volumes:
+      - ./channel-artifacts/genesis.block:/var/hyperledger/orderer/genesis.block
+      - ./organizations/ordererOrganizations/orderer.iis.local/orderers/orderer1.orderer.iis.local/msp:/var/hyperledger/orderer/msp
+      - ./organizations/ordererOrganizations/orderer.iis.local/orderers/orderer1.orderer.iis.local/tls:/var/hyperledger/orderer/tls
+      - orderer1_data:/var/hyperledger/production/orderer
+    ports:
+      - '7050:7050'
+      - '7053:7053'
+    networks:
+      - ledger
+
+  peer0.investigationauthority.iis.local:
+    image: hyperledger/fabric-peer:2.5
+    container_name: peer0.investigationauthority.iis.local
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=iis-ledger-net
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=false
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_ID=peer0.investigationauthority.iis.local
+      - CORE_PEER_ADDRESS=peer0.investigationauthority.iis.local:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.investigationauthority.iis.local:7052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.investigationauthority.iis.local:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.investigationauthority.iis.local:7051
+      - CORE_PEER_LOCALMSPID=InvestigationAuthorityMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:9444
+      - CORE_LEDGER_STATE_STATEDATABASE=goleveldb
+    working_dir: /root
+    command: peer node start
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - ./organizations/peerOrganizations/investigationauthority.iis.local/peers/peer0.investigationauthority.iis.local/msp:/etc/hyperledger/fabric/msp
+      - ./organizations/peerOrganizations/investigationauthority.iis.local/peers/peer0.investigationauthority.iis.local/tls:/etc/hyperledger/fabric/tls
+      - peer0_investigationauthority_data:/var/hyperledger/production
+    ports:
+      - '7051:7051'
+    networks:
+      - ledger
+
+  peer0.oversight.iis.local:
+    image: hyperledger/fabric-peer:2.5
+    container_name: peer0.oversight.iis.local
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=iis-ledger-net
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=false
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_ID=peer0.oversight.iis.local
+      - CORE_PEER_ADDRESS=peer0.oversight.iis.local:9051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:9051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.oversight.iis.local:9052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:9052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.oversight.iis.local:9051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.oversight.iis.local:9051
+      - CORE_PEER_LOCALMSPID=OversightMSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:9445
+      - CORE_LEDGER_STATE_STATEDATABASE=goleveldb
+    working_dir: /root
+    command: peer node start
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - ./organizations/peerOrganizations/oversight.iis.local/peers/peer0.oversight.iis.local/msp:/etc/hyperledger/fabric/msp
+      - ./organizations/peerOrganizations/oversight.iis.local/peers/peer0.oversight.iis.local/tls:/etc/hyperledger/fabric/tls
+      - peer0_oversight_data:/var/hyperledger/production
+    ports:
+      - '9051:9051'
+    networks:
+      - ledger
+
+  cli:
+    image: hyperledger/fabric-tools:2.5
+    container_name: fabric-cli
+    tty: true
+    stdin_open: true
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=iis-ledger-net
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash -c "while true; do sleep 3600; done"
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - ./organizations:/opt/gopath/src/github.com/hyperledger/fabric/peer/organizations
+      - ./channel-artifacts:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts
+      - ../chaincode:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode
+    networks:
+      - ledger
+    depends_on:
+      - orderer1.orderer.iis.local
+      - peer0.investigationauthority.iis.local
+      - peer0.oversight.iis.local
+
+volumes:
+  orderer1_data:
+  peer0_investigationauthority_data:
+  peer0_oversight_data:
